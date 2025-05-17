@@ -147,6 +147,9 @@
             const [results, setResults] = useState(null);
             const [selectedVulnerability, setSelectedVulnerability] = useState(null);
             const [programGraph, setProgramGraph] = useState(null);
+            const [convertingXML, setConvertingXML] = useState(false);
+            const [conversionResult, setConversionResult] = useState(null);
+            const [activeTab, setActiveTab] = useState('overview');
 
             // Ladder logic parser - converts ladder logic text to a graph representation
             const parseLadderLogic = (content) => {
@@ -1035,6 +1038,50 @@ OTE System_Alarm                     // Single source of truth`;
                 return true;
             };
 
+            const handleConvertXML = async () => {
+                if (!file || !file.name.match(/\.(xml|l5x)$/i)) {
+                    return;
+                }
+                
+                setConvertingXML(true);
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const response = await fetch('http://localhost:5000/convert-xml', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        setConversionResult(result);
+                        
+                        // Create a text file from the conversion result
+                        const convertedFile = new File(
+                            [result.converted], 
+                            result.filename, 
+                            { type: 'text/plain' }
+                        );
+                        
+                        // Update the file and file content state
+                        setFile(convertedFile);
+                        setFileContent(result.converted);
+                        
+                        // Show success message
+                        alert('File converted successfully!');
+                    } else {
+                        alert(`Error: ${result.error}`);
+                    }
+                } catch (error) {
+                    console.error('Error converting file:', error);
+                    alert('Error converting file. Check the console for details.');
+                } finally {
+                    setConvertingXML(false);
+                }
+            };
+
             return (
                 <div className="flex flex-col min-h-screen bg-gray-50">
                     <header className="bg-blue-600 text-white p-4">
@@ -1075,6 +1122,20 @@ OTE System_Alarm                     // Single source of truth`;
                                         />
                                     </label>
                                 </div>
+                                
+                                {file && file.name.match(/\.(xml|l5x)$/i) && (
+                                    <div className="mb-4">
+                                        <button
+                                            onClick={handleConvertXML}
+                                            className="w-full py-2 px-4 rounded-md text-white font-medium transition-colors bg-green-600 hover:bg-green-700 mb-2"
+                                        >
+                                            Convert XML to Text Format
+                                        </button>
+                                        <p className="text-xs text-gray-500 italic">
+                                            XML files need to be converted to text format for analysis
+                                        </p>
+                                    </div>
+                                )}
                                 
                                 <button
                                     onClick={handleAnalyze}
@@ -1674,6 +1735,7 @@ XIC Reverse_Button OTE Motor_Reverse</code>
                                             setFile(null);
                                             setFileContent(null);
                                             setProgramGraph(null);
+                                            setActiveTab('overview');
                                         }}
                                         className="mt-4 w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-800 font-medium transition-colors"
                                     >
@@ -1816,55 +1878,90 @@ XIC Reverse_Button OTE Motor_Reverse</code>
                                                 </p>
                                             </div>
                                             
-                                            {/* Program Graph Visualization */}
-                                            <div className="mb-6">
-                                                <h3 className="font-semibold mb-2">Program Structure</h3>
-                                                <div className="mb-4" style={{ height: "400px" }}>
-                                                    <GraphViz graphData={programGraph} />
-                                                </div>
-                                                <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                                                    <div className="flex items-center">
-                                                        <span className="inline-block w-3 h-3 bg-blue-400 mr-1 rounded-full"></span>
-                                                        <span>Instructions</span>
-                                                    </div>
-                                                    <div className="flex items-center">
-                                                        <span className="inline-block w-3 h-3 bg-green-400 mr-1 rounded-full"></span>
-                                                        <span>Conditions</span>
-                                                    </div>
-                                                    <div className="flex items-center">
-                                                        <span className="inline-block w-3 h-3 bg-orange-400 mr-1 rounded-full"></span>
-                                                        <span>Rungs</span>
-                                                    </div>
-                                                    <div className="flex items-center">
-                                                        <span className="inline-block w-3 h-3 bg-purple-400 mr-1 rounded-full"></span>
-                                                        <span>Special</span>
-                                                    </div>
-                                                </div>
+                                            {/* Tab navigation */}
+                                            <div className="flex space-x-2 mb-4 border-b">
+                                                <button 
+                                                    className={`px-4 py-2 text-gray-700 font-medium border-b-2 ${
+                                                        activeTab === 'overview' 
+                                                            ? 'border-blue-500 text-blue-700' 
+                                                            : 'border-transparent hover:border-gray-300 hover:text-gray-900'
+                                                    }`}
+                                                    onClick={() => setActiveTab('overview')}
+                                                >
+                                                    Overview
+                                                </button>
+                                                <button 
+                                                    className={`px-4 py-2 text-gray-700 font-medium border-b-2 ${
+                                                        activeTab === 'ladder-logic' 
+                                                            ? 'border-blue-500 text-blue-700' 
+                                                            : 'border-transparent hover:border-gray-300 hover:text-gray-900'
+                                                    }`}
+                                                    onClick={() => setActiveTab('ladder-logic')}
+                                                >
+                                                    View Ladder Logic
+                                                </button>
                                             </div>
 
-                                            <div className="mt-6">
-                                                <h3 className="font-semibold mb-2">Security Analysis Summary</h3>
-                                                <div className="bg-gray-50 p-4 rounded-md border">
-                                                    <p className="mb-4">
-                                                        Based on the "Secure PLC Coding Practices: Top 20 List", we've analyzed your ladder logic code for 14 common security vulnerabilities using graph isomorphism. 
-                                                        Select a detected vulnerability from the left panel to see details and remediation suggestions.
-                                                    </p>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        <div className="bg-white p-3 rounded border">
-                                                            <div className="text-lg font-medium text-red-600 mb-1">
-                                                                {results.filter(r => r.found).reduce((sum, r) => sum + r.occurrences, 0)}
-                                                            </div>
-                                                            <div className="text-sm text-gray-600">Total Issues Found</div>
+                                            {activeTab === 'ladder-logic' ? (
+                                                <div className="bg-white">
+                                                    <h3 className="font-semibold mb-2">Ladder Logic Code</h3>
+                                                    <pre className="bg-gray-50 p-4 rounded-md overflow-auto text-xs font-mono" style={{ maxHeight: "600px" }}>
+                                                        {fileContent}
+                                                    </pre>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {/* Program Graph Visualization */}
+                                                    <div className="mb-6">
+                                                        <h3 className="font-semibold mb-2">Program Structure</h3>
+                                                        <div className="mb-4" style={{ height: "400px" }}>
+                                                            <GraphViz graphData={programGraph} />
                                                         </div>
-                                                        <div className="bg-white p-3 rounded border">
-                                                            <div className="text-lg font-medium text-green-600 mb-1">
-                                                                {results.filter(r => !r.found).length}/{vulnerabilityPatterns.length}
+                                                        <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                                                            <div className="flex items-center">
+                                                                <span className="inline-block w-3 h-3 bg-blue-400 mr-1 rounded-full"></span>
+                                                                <span>Instructions</span>
                                                             </div>
-                                                            <div className="text-sm text-gray-600">Passed Checks</div>
+                                                            <div className="flex items-center">
+                                                                <span className="inline-block w-3 h-3 bg-green-400 mr-1 rounded-full"></span>
+                                                                <span>Conditions</span>
+                                                            </div>
+                                                            <div className="flex items-center">
+                                                                <span className="inline-block w-3 h-3 bg-orange-400 mr-1 rounded-full"></span>
+                                                                <span>Rungs</span>
+                                                            </div>
+                                                            <div className="flex items-center">
+                                                                <span className="inline-block w-3 h-3 bg-purple-400 mr-1 rounded-full"></span>
+                                                                <span>Special</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </div>
+
+                                                    <div className="mt-6">
+                                                        <h3 className="font-semibold mb-2">Security Analysis Summary</h3>
+                                                        <div className="bg-gray-50 p-4 rounded-md border">
+                                                            <p className="mb-4">
+                                                                Based on the "Secure PLC Coding Practices: Top 20 List", we've analyzed your ladder logic code for 14 common security vulnerabilities using graph isomorphism. 
+                                                                Select a detected vulnerability from the left panel to see details and remediation suggestions.
+                                                            </p>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <div className="bg-white p-3 rounded border">
+                                                                    <div className="text-lg font-medium text-red-600 mb-1">
+                                                                        {results.filter(r => r.found).reduce((sum, r) => sum + r.occurrences, 0)}
+                                                                    </div>
+                                                                    <div className="text-sm text-gray-600">Total Issues Found</div>
+                                                                </div>
+                                                                <div className="bg-white p-3 rounded border">
+                                                                    <div className="text-lg font-medium text-green-600 mb-1">
+                                                                        {results.filter(r => !r.found).length}/{vulnerabilityPatterns.length}
+                                                                    </div>
+                                                                    <div className="text-sm text-gray-600">Passed Checks</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
                                         </>
                                     )}
                                 </div>
