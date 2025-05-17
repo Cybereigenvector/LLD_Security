@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ladder Logic Security Analyzer - README</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 p-6">
+    <div class="container mx-auto max-w-4xl bg-white p-8 rounded-lg shadow-md">
+        <h1 class="text-3xl font-bold text-blue-600 mb-6">Ladder Logic Security Analyzer</h1>
+        
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-3">Overview</h2>
+            <p class="mb-3">
+                This tool uses graph isomorphism techniques to detect 14 common security vulnerabilities in PLC ladder logic programs.
+                It can analyze ladder logic code, visualize program graphs, and provide specific remediation advice for each vulnerability.
+            </p>
+        </div>
+        
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-3">How to Use</h2>
+            <ol class="list-decimal list-inside space-y-2 mb-4">
+                <li>Open the <code class="bg-gray-100 px-1 py-0.5 rounded">index.html</code> file in your web browser</li>
+                <li>Click "Browse" to upload a ladder logic text file (sample files are provided)</li>
+                <li>Click "Analyze for Vulnerabilities" to run the security analysis</li>
+                <li>Review the results summary and click on specific vulnerabilities for details</li>
+                <li>Each vulnerability includes code snippets and recommended fixes</li>
+            </ol>
+        </div>
+        
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-3">Sample Files</h2>
+            <p class="mb-3">
+                Two sample files are included for testing:
+            </p>
+            <ul class="list-disc list-inside space-y-2">
+                <li><code class="bg-gray-100 px-1 py-0.5 rounded">sample_ladder.txt</code> - Contains examples of all 14 vulnerability patterns</li>
+                <li><code class="bg-gray-100 px-1 py-0.5 rounded">sample_secure_ladder.txt</code> - Contains secure, remediated versions of the same patterns</li>
+            </ul>
+        </div>
+        
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-3">Vulnerability Patterns</h2>
+            <p class="mb-3">The analyzer checks for these 14 common vulnerability patterns:</p>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 mb-4">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-001</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Unconditional coil overwrite</td>
+                            <td class="px-3 py-2">Ladder logic that unconditionally overwrites an output coil without proper conditions</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-002</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Shadow reset (seal-in loop)</td>
+                            <td class="px-3 py-2">A circuit that resets a seal-in loop without proper validation</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-003</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Timer bomb (preset from writable tag)</td>
+                            <td class="px-3 py-2">Timer preset values come from HMI-writable tags without validation</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-004</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Unsafe mode override</td>
+                            <td class="px-3 py-2">Using MOV 1 to override safety or diagnostic tags</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-005</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Monolithic main block</td>
+                            <td class="px-3 py-2">Main routine with excessive nodes, making it harder to maintain and secure</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-006</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Unvalidated timer/counter preset</td>
+                            <td class="px-3 py-2">Timer or counter values without validation logic</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-007</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Mutually-exclusive coils asserted</td>
+                            <td class="px-3 py-2">Antagonistic coil pairs (e.g., Motor_FWD and Motor_REV) asserted simultaneously</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-008</td>
+                            <td class="px-3 py-2 whitespace-nowrap">HMI blind-write</td>
+                            <td class="px-3 py-2">HMI writing to PLC variables without validation</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-009</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Out-of-bounds indirection</td>
+                            <td class="px-3 py-2">Array indexing without bounds checks</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-010</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Rapid toggle / missing debounce</td>
+                            <td class="px-3 py-2">Paired outputs without debounce timer protection</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-011</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Missing plausibility cross-check</td>
+                            <td class="px-3 py-2">Missing validation between redundant sensor tags</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-012</td>
+                            <td class="px-3 py-2 whitespace-nowrap">No physical-limit clamp</td>
+                            <td class="px-3 py-2">PID blocks without physical limits on operator inputs</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-013</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Flag-blind math</td>
+                            <td class="px-3 py-2">Math operations without status bit checking for alarms</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium">V-014</td>
+                            <td class="px-3 py-2 whitespace-nowrap">Alert-trap bypass</td>
+                            <td class="px-3 py-2">Alarm coil written from multiple rungs where one lacks conditions</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div>
+            <h2 class="text-xl font-bold text-gray-800 mb-3">Technical Details</h2>
+            <p class="mb-3">
+                The analyzer uses the following techniques:
+            </p>
+            <ul class="list-disc list-inside space-y-1 mb-4">
+                <li>Parses ladder logic code into a graph representation</li>
+                <li>Uses graph isomorphism to detect vulnerability patterns</li>
+                <li>Provides visual representations using Cytoscape.js</li>
+                <li>Offers detailed remediation advice based on secure PLC coding practices</li>
+            </ul>
+            <p class="text-sm text-gray-500">
+                Based on the "Top 20 Secure PLC Coding Practices" guidelines
+            </p>
+        </div>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,121 @@
+// Sample ladder logic with security vulnerabilities
+// Contains examples of all 14 vulnerability patterns from Secure PLC Coding Practices
+
+// ==========================================================================
+// Pattern V-001: Unconditional coil overwrite
+// Description: Ladder logic that unconditionally overwrites an output coil without proper conditions
+// ==========================================================================
+// Rung 1 - Unconditional output (no condition preceding the output)
+OTE Critical_Output
+
+// ==========================================================================
+// Pattern V-002: Shadow reset (seal-in loop)
+// Description: A circuit that resets a seal-in loop without proper validation
+// ==========================================================================
+// Rung 2 - Seal-in circuit with improper reset
+XIC Alarm_Condition OTE Alarm_Active
+XIC Alarm_Active OTE Alarm_Active    // Seal-in logic
+XIC Reset_Button OTU Alarm_Active    // Reset without validation
+
+// ==========================================================================
+// Pattern V-003: Timer bomb (preset from writable tag)
+// Description: Timer preset values come from HMI-writable tags without validation
+// ==========================================================================
+// Rung 3 - Timer with preset from HMI
+MOV HMI_Value Timer1.PRE  // Direct use of HMI value without validation
+TON Timer1
+
+// ==========================================================================
+// Pattern V-004: Unsafe mode override (blind MOV 1)
+// Description: Using MOV 1 to override safety or diagnostic tags
+// ==========================================================================
+// Rung 4 - Maintenance mode with blind safety override
+XIC Maintenance_Mode
+MOV 1 Safety_Bypass       // Blind override of safety system
+
+// ==========================================================================
+// Pattern V-005: Monolithic main block
+// Description: Main routine with more than 500 nodes, making it harder to maintain and secure
+// ==========================================================================
+// Note: This would be a routine with 500+ ladder elements
+// Simulating the beginning of a very large routine:
+XIC Input_1 OTE Output_1
+XIC Input_2 OTE Output_2
+XIC Input_3 OTE Output_3
+XIC Input_4 OTE Output_4
+XIC Input_5 OTE Output_5
+XIC Input_6 OTE Output_6
+// ... imagine many more lines here
+
+// ==========================================================================
+// Pattern V-006: Unvalidated timer/counter preset
+// Description: Timer or counter values without validation logic
+// ==========================================================================
+// Rung 5 - Counter without preset validation
+MOV User_Counter_Input CTU_1.PRE  // No range checking on counter preset
+CTU CTU_1
+
+// ==========================================================================
+// Pattern V-007: Mutually-exclusive coils asserted
+// Description: Antagonistic coil pairs (e.g., Motor_FWD and Motor_REV) asserted simultaneously
+// ==========================================================================
+// Rung 6 - Mutually exclusive outputs without interlock
+XIC Forward_Button OTE Motor_Forward
+XIC Reverse_Button OTE Motor_Reverse
+// Missing interlock logic to prevent both outputs being energized simultaneously
+
+// ==========================================================================
+// Pattern V-008: HMI blind-write
+// Description: HMI writing to PLC variables without validation
+// ==========================================================================
+// Rung 7 - HMI writing directly to critical tags
+// This is typically configured in the HMI, but represented here:
+// HMI_Tag directly mapped to Critical_Setpoint without PLC validation
+
+// ==========================================================================
+// Pattern V-009: Out-of-bounds indirection
+// Description: Array indexing without bounds checks
+// ==========================================================================
+// Rung 8 - Array access without bounds checking
+MOV Index Array[Index]  // No validation that Index is within array bounds
+
+// ==========================================================================
+// Pattern V-010: Rapid toggle / missing debounce
+// Description: Paired outputs without debounce timer protection
+// ==========================================================================
+// Rung 9 - Output toggling without debounce
+XIC Button_Input OTE Toggle_Output  // Missing debounce timer
+
+// ==========================================================================
+// Pattern V-011: Missing plausibility cross-check
+// Description: Missing validation between redundant sensor tags
+// ==========================================================================
+// Rung 10 - Redundant sensors without cross-check
+XIC Sensor_1 OTE Process_Running
+// Should compare Sensor_1 with redundant Sensor_2 for plausibility
+
+// ==========================================================================
+// Pattern V-012: No physical-limit clamp
+// Description: PID blocks without physical limits on operator inputs
+// ==========================================================================
+// Rung 11 - PID without min/max clamping
+MOV Operator_Input PID_Setpoint  // Missing min/max range validation
+PID PID_Controller
+
+// ==========================================================================
+// Pattern V-013: Flag-blind math
+// Description: Math operations without status bit checking for alarms
+// ==========================================================================
+// Rung 12 - Math without status checking
+DIV Value_1 Value_2 Result  // Missing check for divide-by-zero
+ADD Value_3 Value_4 Sum     // Missing overflow check
+
+// ==========================================================================
+// Pattern V-014: Alert-trap bypass
+// Description: Alarm coil written from multiple rungs where one lacks conditions
+// ==========================================================================
+// Rung 13 - Alarm with conditions
+XIC Condition_1 XIC Condition_2 OTE System_Alarm
+
+// Rung 14 - Same alarm without conditions (trap bypass)
+OTE System_Alarm  // Unconditional write to same alarm coil 

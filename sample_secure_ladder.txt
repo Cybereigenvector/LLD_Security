@@ -1,0 +1,176 @@
+// SECURE LADDER LOGIC PROGRAM
+// Demonstrates proper security practices for PLC programming
+// This is the fixed version of sample_ladder.txt with all vulnerabilities remediated
+
+// ==========================================================================
+// Solution for V-001: Add proper conditions to coil outputs
+// ==========================================================================
+// Rung 1 - Properly conditioned output
+XIC System_Running
+XIC Safety_Permissive
+XIC Operator_Permission
+OTE Critical_Output
+
+// ==========================================================================
+// Solution for V-002: Add proper validation for seal-in loop reset
+// ==========================================================================
+// Rung 2 - Seal-in circuit with proper reset validation
+XIC Alarm_Condition OTE Alarm_Active
+XIC Alarm_Active OTE Alarm_Active    // Seal-in logic
+XIC Reset_Button
+XIC Operator_Authorized
+XIC All_Clear_Verified
+OTU Alarm_Active    // Reset with proper validation
+
+// ==========================================================================
+// Solution for V-003: Validate timer presets from HMI
+// ==========================================================================
+// Rung 3 - Timer with properly validated preset
+MOV HMI_Value Temp_Timer_Value
+LIM Minimum_Time Temp_Timer_Value Maximum_Time  // Range check
+EQU 1 Valid_Timer
+XIC Valid_Timer
+MOV Temp_Timer_Value Timer1.PRE      // Only use validated value
+TON Timer1
+
+// ==========================================================================
+// Solution for V-004: Replace blind safety overrides with proper authorization
+// ==========================================================================
+// Rung 4 - Maintenance mode with proper safety controls
+XIC Maintenance_Mode
+XIC Supervisor_Key_Switch            // Physical key authorization
+TON Timeout_Timer                    // Automatic timeout
+XIC Timeout_Timer.DN                 // Only active for limited time
+XIC Safety_Override_Logging.DN       // Ensure logging is active
+MOV 1 Safety_Bypass_Request          // Request rather than direct override
+
+// ==========================================================================
+// Solution for V-005: Break monolithic blocks into smaller routines
+// ==========================================================================
+// Main routine broken into smaller functional blocks
+JSR Initialize_System
+JSR Process_Inputs
+JSR Execute_Control_Logic
+JSR Process_Outputs
+JSR Safety_Monitor
+
+// ==========================================================================
+// Solution for V-006: Add validation for timer/counter presets
+// ==========================================================================
+// Rung 5 - Counter with proper preset validation
+MOV User_Counter_Input Temp_Counter
+LIM Min_Count Temp_Counter Max_Count   // Range check
+EQU 1 Valid_Counter
+XIC Valid_Counter
+MOV Temp_Counter CTU_1.PRE           // Only use valid counter preset
+XIO Valid_Counter 
+MOV Default_Count CTU_1.PRE          // Use safe default if invalid
+CTU CTU_1
+
+// ==========================================================================
+// Solution for V-007: Add interlocks for mutually-exclusive outputs
+// ==========================================================================
+// Rung 6 - Mutually exclusive outputs with proper interlocks
+XIC Forward_Button
+XIO Motor_Reverse                    // Interlock - cannot run if reverse is on
+TON Forward_Delay                    // Min delay between direction changes
+XIC Forward_Delay.DN
+OTE Motor_Forward
+
+XIC Reverse_Button
+XIO Motor_Forward                    // Interlock - cannot run if forward is on
+TON Reverse_Delay                    // Min delay between direction changes
+XIC Reverse_Delay.DN
+OTE Motor_Reverse
+
+// ==========================================================================
+// Solution for V-008: Add PLC-side validation for HMI inputs
+// ==========================================================================
+// Rung 7 - Proper HMI input validation
+// HMI writes to buffer tag, PLC validates before using
+MOV HMI_Buffer_Tag Temp_Value
+LIM Min_Safe_Value Temp_Value Max_Safe_Value
+EQU 1 Valid_HMI_Input
+XIC Valid_HMI_Input
+MOV Temp_Value Critical_Setpoint     // Only use if valid
+XIO Valid_HMI_Input
+OTE HMI_Validation_Error             // Alert if invalid
+
+// ==========================================================================
+// Solution for V-009: Add bounds checking for array access
+// ==========================================================================
+// Rung 8 - Array access with proper bounds checking
+MOV Index Temp_Index
+LIM 0 Temp_Index Array_Size          // Bounds check
+EQU 1 Valid_Index
+XIC Valid_Index
+MOV Array[Temp_Index] Temp_Value     // Only access array if index is valid
+XIO Valid_Index
+OTE Index_Out_Of_Range               // Alert on invalid index
+
+// ==========================================================================
+// Solution for V-010: Add debounce timer protection
+// ==========================================================================
+// Rung 9 - Output toggle with debounce protection
+XIC Button_Input
+TON Debounce_Timer                   // Debounce delay
+XIC Debounce_Timer.DN                // Only act after debounce time
+OSR Button_Pulse                     // One-shot rising for clean pulse
+XIC Button_Pulse
+XIO Toggle_Output                    // Toggle current state
+OTE Toggle_Output
+
+// ==========================================================================
+// Solution for V-011: Add plausibility cross-checks for redundant sensors
+// ==========================================================================
+// Rung 10 - Proper redundant sensor cross-checking
+XIC Sensor_1 
+XIC Sensor_2                         // Require both sensors
+OTE Process_Running                  // Only run if both agree
+
+// Check for sensor disagreement
+XIC Sensor_1
+XIO Sensor_2                         // Sensor 1 on, Sensor 2 off
+OTE Sensor_Mismatch                  // Alert on sensor mismatch
+
+XIO Sensor_1
+XIC Sensor_2                         // Sensor 1 off, Sensor 2 on
+OTE Sensor_Mismatch                  // Alert on sensor mismatch
+
+// ==========================================================================
+// Solution for V-012: Add physical limit clamping for PID
+// ==========================================================================
+// Rung 11 - PID with proper min/max validation
+MOV Operator_Input Temp_Setpoint
+LIM Physical_Min_Value Temp_Setpoint Physical_Max_Value  // Physical limits
+EQU 1 Valid_Setpoint
+XIC Valid_Setpoint
+MOV Temp_Setpoint PID_Setpoint       // Only use if within limits
+XIO Valid_Setpoint
+OTE Setpoint_Error                   // Alert on invalid setpoint
+PID PID_Controller
+
+// ==========================================================================
+// Solution for V-013: Add proper status bit checking for math operations
+// ==========================================================================
+// Rung 12 - Math with status bit checking
+// Division with divide-by-zero checking
+XIC Value_2_Is_Zero                  // Check for zero before division
+OTE Divide_Error                     // Alert on potential divide-by-zero
+
+XIO Value_2_Is_Zero                  // Only divide if not zero
+DIV Value_1 Value_2 Result
+XIC S:V                             // Check math status bit
+OTE Math_Error                      // Alert on math error
+
+// ==========================================================================
+// Solution for V-014: Centralize alarm logic to single location
+// ==========================================================================
+// Rung 13 - Centralized alarm logic with all required conditions
+XIC Condition_1 
+XIC Condition_2 
+OTE System_Alarm_Internal            // Private internal alarm state
+
+// Rung 14 - Single alarm output source
+XIC System_Alarm_Internal            // Only one place to set the actual alarm
+OTE System_Alarm                     // Single source of truth 
